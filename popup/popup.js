@@ -169,6 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add buttons
     $('btnAddCharacter').addEventListener('click', () => openModal('modalCharacter'));
     $('btnAddEnvironment').addEventListener('click', () => openModal('modalEnvironment'));
+    $('btnDebug').addEventListener('click', openDebugServer);
     
     // Modal buttons
     $('cancelChar').addEventListener('click', () => closeModal('modalCharacter'));
@@ -235,6 +236,24 @@ document.addEventListener('DOMContentLoaded', () => {
       scenes = resp.scenes;
       renderScenes();
       generateClips();
+      
+      // REPORT TO DEBUG SERVER
+      reportToDebugServer(scenes);
+    }
+  }
+  
+  // Report parsing results to debug server
+  async function reportToDebugServer(scenes) {
+    try {
+      const response = await fetch('http://localhost:3001/parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scenes: scenes })
+      });
+      const result = await response.json();
+      console.log('[Debug] Reported', result.count, 'scenes to debug server');
+    } catch (e) {
+      // Debug server not running, ignore
     }
   }
   
@@ -830,5 +849,10 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       statusEl.style.opacity = '0';
     }, 3000);
+  }
+  
+  // Open debug server in new tab
+  function openDebugServer() {
+    window.open('http://localhost:3001/', '_blank');
   }
 });
