@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "GeminiGen Auto Flow Pro",
+  "version": "2.0.0",
+  "description": "Auto flow per geminigen.ai - script, prompt, clip intelligence, character/environment memory",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "downloads",
+    "filesystem"
+  ],
+  "host_permissions": [
+    "https://*.geminigen.ai/*",
+    "https://*/*"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.svg",
+      "48": "icons/icon48.svg",
+      "128": "icons/icon128.svg"
+    }
+  },
+  "background": {
+    "service_worker": "background/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.geminigen.ai/*"],
+      "js": ["content/content.js"],
+      "css": ["content/styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.svg",
+    "48": "icons/icon48.svg",
+    "128": "icons/icon128.svg"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "geminigen-autoflow-pro@schumynet",
+      "strict_min_version": "109.0"
+    }
+  }
+}

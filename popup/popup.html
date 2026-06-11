@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GeminiGen Auto Flow Pro</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      width: 420px;
+      min-height: 600px;
+      background: linear-gradient(180deg, #0f0f1a 0%, #1a1a2e 100%);
+      color: white;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .header h1 { font-size: 15px; font-weight: 600; }
+    .header-badge {
+      background: rgba(255,255,255,0.2);
+      padding: 3px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+    }
+    
+    /* Quota Bar */
+    .quota-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: rgba(0,0,0,0.3);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 12px;
+    }
+    
+    .quota-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .quota-label { opacity: 0.6; }
+    .quota-value { color: #667eea; font-weight: 600; }
+    .quota-sep { opacity: 0.4; }
+    .quota-total { opacity: 0.6; }
+    
+    .quota-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 600;
+      background: rgba(74,222,128,0.2);
+      color: #4ade80;
+    }
+    .quota-badge.warning { background: rgba(251,191,36,0.2); color: #fbbf24; }
+    .quota-badge.depleted { background: rgba(248,113,113,0.2); color: #f87171; }
+    .quota-badge.unlimited { background: rgba(139,92,246,0.3); color: #a78bfa; }
+    
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: rgba(0,0,0,0.2);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .tab {
+      flex: 1;
+      padding: 10px 8px;
+      text-align: center;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-bottom: 2px solid transparent;
+    }
+    
+    .tab:hover { background: rgba(255,255,255,0.05); }
+    .tab.active { 
+      background: rgba(102,126,234,0.2); 
+      border-bottom-color: #667eea;
+    }
+    
+    /* Content */
+    .content { padding: 12px; }
+    .section { display: none; }
+    .section.active { display: block; }
+    
+    /* Cards */
+    .card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    
+    .card-title {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    /* Script Input */
+    .script-area {
+      width: 100%;
+      min-height: 120px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 10px;
+      color: white;
+      font-family: monospace;
+      font-size: 12px;
+      resize: vertical;
+    }
+    
+    .script-area:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .script-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    
+    /* File Upload */
+    .file-upload {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px dashed rgba(255,255,255,0.2);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      font-size: 12px;
+    }
+    
+    .file-upload:hover {
+      border-color: #667eea;
+      background: rgba(102,126,234,0.1);
+    }
+    
+    .file-upload input { display: none; }
+    .file-upload-icon { font-size: 20px; }
+    
+    /* Scene Preview */
+    .scenes-preview {
+      max-height: 150px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+    
+    .scene-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 11px;
+    }
+    
+    .scene-index {
+      width: 24px;
+      height: 24px;
+      background: #667eea;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 10px;
+    }
+    
+    .scene-title { flex: 1; font-weight: 500; }
+    .scene-prompt { 
+      flex: 1; 
+      opacity: 0.6; 
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 150px;
+    }
+    
+    /* Clip Duration Selector */
+    .duration-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+    
+    .duration-option {
+      padding: 10px 4px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .duration-option:hover { border-color: #667eea; }
+    .duration-option.selected { 
+      background: rgba(102,126,234,0.3); 
+      border-color: #667eea;
+    }
+    
+    .duration-value { font-size: 16px; font-weight: 700; }
+    .duration-label { font-size: 9px; opacity: 0.6; }
+    
+    /* Mode Toggle */
+    .mode-toggle {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    
+    .mode-btn {
+      flex: 1;
+      padding: 8px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .mode-btn.active {
+      background: rgba(102,126,234,0.3);
+      border-color: #667eea;
+    }
+    
+    /* Clip Intelligence Info */
+    .intelligence-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      background: rgba(102,126,234,0.1);
+      border-radius: 8px;
+      font-size: 11px;
+      margin-top: 8px;
+    }
+    
+    .intelligence-icon { font-size: 16px; }
+    .intelligence-text { flex: 1; }
+    
+    /* Character/Environment Select */
+    .select-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: all 0.2s;
+    }
+    
+    .select-item:hover { border-color: #667eea; }
+    .select-item.selected { border-color: #667eea; background: rgba(102,126,234,0.15); }
+    
+    .select-avatar {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    
+    .select-info { flex: 1; }
+    .select-name { font-size: 13px; font-weight: 500; }
+    .select-desc { font-size: 10px; opacity: 0.6; margin-top: 2px; }
+    
+    /* List Items */
+    .items-list { max-height: 200px; overflow-y: auto; }
+    
+    .list-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .list-item:hover { background: rgba(255,255,255,0.08); }
+    .list-item.selected { background: rgba(102,126,234,0.2); border: 1px solid #667eea; }
+    
+    .list-item-icon {
+      width: 32px;
+      height: 32px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .list-item-info { flex: 1; }
+    .list-item-name { font-size: 12px; font-weight: 500; }
+    .list-item-meta { font-size: 10px; opacity: 0.5; }
+    
+    .list-item-delete {
+      padding: 6px;
+      background: rgba(248,113,113,0.2);
+      border: none;
+      border-radius: 6px;
+      color: #f87171;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    
+    /* Add Button */
+    .btn-add {
+      width: 100%;
+      padding: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px dashed rgba(255,255,255,0.2);
+      border-radius: 8px;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-add:hover { border-color: #667eea; background: rgba(102,126,234,0.1); }
+    
+    /* Primary Button */
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 10px;
+    }
+    
+    .btn-primary:hover { transform: scale(1.02); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    
+    /* Secondary Buttons */
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    
+    .btn-secondary {
+      flex: 1;
+      padding: 10px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    
+    /* Progress Bar */
+    .progress-section {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+    }
+    
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      margin-bottom: 8px;
+    }
+    
+    .progress-bar {
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      transition: width 0.3s;
+    }
+    
+    .progress-clip {
+      font-size: 10px;
+      opacity: 0.6;
+      margin-top: 6px;
+      text-align: center;
+    }
+    
+    /* Control Buttons */
+    .control-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    
+    .control-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .control-btn.play {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+    
+    .control-btn.pause {
+      background: rgba(251,191,36,0.2);
+      color: #fbbf24;
+    }
+    
+    .control-btn.stop {
+      background: rgba(248,113,113,0.2);
+      color: #f87171;
+    }
+    
+    /* Config Section */
+    .config-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 12px;
+    }
+    
+    .config-label { opacity: 0.8; }
+    .config-value { color: #667eea; }
+    
+    .folder-structure {
+      font-family: monospace;
+      font-size: 10px;
+      background: rgba(0,0,0,0.3);
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 8px;
+      opacity: 0.7;
+      line-height: 1.6;
+    }
+    
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal.active { display: flex; }
+    
+    .modal-content {
+      background: #1a1a2e;
+      border-radius: 16px;
+      padding: 20px;
+      width: 360px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .modal-header {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    
+    .form-group {
+      margin-bottom: 12px;
+    }
+    
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      opacity: 0.7;
+    }
+    
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: white;
+      font-size: 12px;
+      font-family: inherit;
+    }
+    
+    .form-group textarea { min-height: 60px; resize: vertical; }
+    .form-group input:focus, .form-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    
+    .modal-cancel {
+      flex: 1;
+      padding: 10px;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    
+    .modal-confirm {
+      flex: 1;
+      padding: 10px;
+      background: #667eea;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    
+    /* Status indicator */
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      font-size: 11px;
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4ade80;
+    }
+    
+    .status-dot.paused { background: #fbbf24; }
+    .status-dot.stopped { background: #6b7280; }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+    
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 20px;
+      opacity: 0.5;
+      font-size: 12px;
+    }
+    
+    .empty-state-icon { font-size: 28px; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <h1>🚀 GeminiGen Auto Flow Pro</h1>
+    <span class="header-badge">v2.0</span>
+  </div>
+  
+  <!-- Quota Bar -->
+  <div class="quota-bar">
+    <div class="quota-item">
+      <span class="quota-label">🗓️ Oggi</span>
+      <span class="quota-value" id="dailyUsed">-</span>
+      <span class="quota-sep">/</span>
+      <span class="quota-total" id="dailyTotal">-</span>
+    </div>
+    <div class="quota-item">
+      <span class="quota-label">📅 Mese</span>
+      <span class="quota-value" id="monthlyUsed">-</span>
+      <span class="quota-sep">/</span>
+      <span class="quota-total" id="monthlyTotal">-</span>
+    </div>
+    <div class="quota-badge" id="quotaBadge">∞</div>
+  </div>
+  
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" data-tab="script">📝 Script</div>
+    <div class="tab" data-tab="clips">🎬 Clip</div>
+    <div class="tab" data-tab="memory">🧠 Memory</div>
+    <div class="tab" data-tab="config">⚙️</div>
+  </div>
+  
+  <!-- Content -->
+  <div class="content">
+    <!-- SCRIPT TAB -->
+    <div class="section active" id="section-script">
+      <div class="card">
+        <div class="card-title">📝 Copione / Prompt</div>
+        
+        <!-- Text Area -->
+        <textarea class="script-area" id="scriptInput" placeholder="Inserisci il copione qui...
+
+支持 formati multipli:
+- [SCENA 1] Descrizione
+- [SCENA 2] Altro
+- Oppure semplici paragrafi
+
+Ogni scena = un prompt per clip"></textarea>
+        
+        <div class="script-actions">
+          <label class="file-upload" style="flex:1">
+            <span class="file-upload-icon">📁</span>
+            <span>Carica .txt</span>
+            <input type="file" accept=".txt" id="fileInput">
+          </label>
+          <button class="btn-secondary" id="btnParse" style="flex:1">🔍 Analizza</button>
+        </div>
+      </div>
+      
+      <!-- Scenes Preview -->
+      <div class="card" id="scenesCard" style="display:none">
+        <div class="card-title">🎭 Scene Trovate: <span id="sceneCount">0</span></div>
+        <div class="scenes-preview" id="scenesPreview"></div>
+        
+        <div class="intelligence-info">
+          <span class="intelligence-icon">🧠</span>
+          <span class="intelligence-text" id="intelligenceText">Clip intelligence pronta</span>
+        </div>
+      </div>
+      
+      <!-- Duration & Mode -->
+      <div class="card">
+        <div class="card-title">⏱️ Durata Clip</div>
+        <div class="duration-grid">
+          <div class="duration-option" data-duration="4">
+            <div class="duration-value">4s</div>
+            <div class="duration-label">Micro</div>
+          </div>
+          <div class="duration-option selected" data-duration="6">
+            <div class="duration-value">6s</div>
+            <div class="duration-label">Short</div>
+          </div>
+          <div class="duration-option" data-duration="8">
+            <div class="duration-value">8s</div>
+            <div class="duration-label">Medium</div>
+          </div>
+          <div class="duration-option" data-duration="15">
+            <div class="duration-value">15s</div>
+            <div class="duration-label">Long</div>
+          </div>
+          <div class="duration-option" data-duration="30">
+            <div class="duration-value">30s</div>
+            <div class="duration-label">Full</div>
+          </div>
+        </div>
+        
+        <div class="mode-toggle">
+          <button class="mode-btn active" data-mode="single">🎬 Clip Singola</button>
+          <button class="mode-btn" data-mode="combined">🔗 Combina Scene</button>
+        </div>
+      </div>
+      
+      <!-- Character & Environment -->
+      <div class="card">
+        <div class="card-title">👤 Personaggio</div>
+        <div class="select-item" id="selectCharacter">
+          <div class="select-avatar">👤</div>
+          <div class="select-info">
+            <div class="select-name">Nessuno selezionato</div>
+            <div class="select-desc">Clicca per selezionare dalla memory</div>
+          </div>
+        </div>
+        
+        <div class="card-title" style="margin-top:12px">🏠 Ambiente</div>
+        <div class="select-item" id="selectEnvironment">
+          <div class="select-avatar">🏠</div>
+          <div class="select-info">
+            <div class="select-name">Nessuno selezionato</div>
+            <div class="select-desc">Clicca per selezionare dalla memory</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Start Button -->
+      <button class="btn-primary" id="btnStart">
+        ▶️ Avvia Auto Flow
+      </button>
+      
+      <!-- Progress -->
+      <div class="progress-section" id="progressSection" style="display:none">
+        <div class="progress-header">
+          <span id="progressLabel">Generazione 0/0</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+        <div class="progress-clip" id="progressClip">Clip attuale: -</div>
+        
+        <div class="control-row">
+          <button class="control-btn pause" id="btnPause">⏸️ Pausa</button>
+          <button class="control-btn stop" id="btnStop">⏹️ Stop</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- CLIPS TAB -->
+    <div class="section" id="section-clips">
+      <div class="status-indicator" style="margin-bottom:12px">
+        <div class="status-dot" id="flowStatusDot"></div>
+        <span id="flowStatusText">Inattivo</span>
+      </div>
+      
+      <div class="card">
+        <div class="card-title">📊 Sequenza Clip</div>
+        <div id="clipsList" class="items-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">🎬</div>
+            <div>Nessuna clip in coda</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="btn-row">
+        <button class="btn-secondary" id="btnPreviewClips">👁️ Anteprima Clip</button>
+        <button class="btn-secondary" id="btnClearClips">🗑️ Svuota</button>
+      </div>
+    </div>
+    
+    <!-- MEMORY TAB -->
+    <div class="section" id="section-memory">
+      <div class="card">
+        <div class="card-title">👤 Personaggi</div>
+        <div id="charactersList" class="items-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">👤</div>
+            <div>Nessun personaggio salvato</div>
+          </div>
+        </div>
+        <button class="btn-add" id="btnAddCharacter">➕ Aggiungi Personaggio</button>
+      </div>
+      
+      <div class="card">
+        <div class="card-title">🏠 Ambienti</div>
+        <div id="environmentsList" class="items-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">🏠</div>
+            <div>Nessun ambiente salvato</div>
+          </div>
+        </div>
+        <button class="btn-add" id="btnAddEnvironment">➕ Aggiungi Ambiente</button>
+      </div>
+      
+      <div class="card">
+        <div class="card-title">📜 Copioni Salvati</div>
+        <div id="scriptsList" class="items-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">📜</div>
+            <div>Nessun copione salvato</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- CONFIG TAB -->
+    <div class="section" id="section-config">
+      <div class="card">
+        <div class="card-title">📂 Struttura Output</div>
+        <div class="folder-structure">
+GeminiGen-AutoFlow/<br>
+├── 01_Scripts/<br>
+├── 02_Characters/<br>
+├── 03_Environments/<br>
+├── 04_Clips_6s/<br>
+├── 05_Clips_8s/<br>
+├── 06_Clips_15s/<br>
+├── 07_Clips_30s/<br>
+├── 08_Combined/<br>
+└── 09_Exports/
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-title">⏱️ Timing</div>
+        <div class="config-row">
+          <span class="config-label">Delay tra clip</span>
+          <span class="config-value" id="delayValue">2s</span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">Timeout generazione</span>
+          <span class="config-value">5 min</span>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-title">🧠 Clip Intelligence</div>
+        <div class="config-row">
+          <span class="config-label">Auto-combine scene</span>
+          <span class="config-value">✓ Attivo</span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">Contestualizzazione</span>
+          <span class="config-value">✓ Attivo</span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">Rilevamento pause</span>
+          <span class="config-value">✓ Attivo</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Modal: Add Character -->
+  <div class="modal" id="modalCharacter">
+    <div class="modal-content">
+      <div class="modal-header">➕ Nuovo Personaggio</div>
+      <div class="form-group">
+        <label>Nome</label>
+        <input type="text" id="charName" placeholder="Es: Protagonista">
+      </div>
+      <div class="form-group">
+        <label>Descrizione</label>
+        <textarea id="charDesc" placeholder="Es: Uomo, 30 anni, capelli scuri..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Prompt Base</label>
+        <textarea id="charPrompt" placeholder="Per rigenerazione coerente..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-cancel" id="cancelChar">Annulla</button>
+        <button class="modal-confirm" id="saveChar">Salva</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Modal: Add Environment -->
+  <div class="modal" id="modalEnvironment">
+    <div class="modal-content">
+      <div class="modal-header">➕ Nuovo Ambiente</div>
+      <div class="form-group">
+        <label>Nome</label>
+        <input type="text" id="envName" placeholder="Es: Laboratorio">
+      </div>
+      <div class="form-group">
+        <label>Descrizione</label>
+        <textarea id="envDesc" placeholder="Es: Laboratorio scientifico..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Illuminazione</label>
+        <input type="text" id="envLighting" placeholder="Es: Neon blu">
+      </div>
+      <div class="modal-actions">
+        <button class="modal-cancel" id="cancelEnv">Annulla</button>
+        <button class="modal-confirm" id="saveEnv">Salva</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
