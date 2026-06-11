@@ -193,27 +193,26 @@ const ScriptParser = {
     // Suddividi per PROMPT (ogni PROMPT = una scena)
     const promptMatches = cleanText.matchAll(/PROMPT\s+(\d+)(?:\s*\n|\s*)([\s\S]*?)(?=(?:\s*PROMPT\s+\d+)|$)/gi);
     
-    let promptIndex = 0;
     for (const match of promptMatches) {
-      const promptNum = match[1];
+      const promptNumStr = match[1];
       const promptContent = match[2];
       
       // Estrai tutti i campi
       const fields = this.extractAllFields(promptContent);
       
+      // Usa il NUMERO REALE dal testo (001, 002, ecc.)
+      const realPromptNum = parseInt(promptNumStr, 10);
+      
       if (fields.visualDescription.length > 10 || fields.voiceover.length > 5) {
         scenes.push({
-          index: promptIndex,
-          title: `Prompt ${promptNum}`,
+          index: scenes.length,  // Indice sequenziale
+          title: `Prompt ${realPromptNum}`,  // Numero reale nel titolo
           visualDescription: fields.visualDescription,
           voiceover: fields.voiceover,
           audio: fields.audio,
           duration: 6,
-          promptNumber: parseInt(promptNum),
-          character: null,
-          environment: null
+          promptNumber: realPromptNum  // Numero reale
         });
-        promptIndex++;
       }
     }
     
