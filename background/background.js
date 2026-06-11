@@ -451,7 +451,7 @@ const QuotaTracker = {
   quota: {
     daily: { total: 0, used: 0, remaining: 0 },
     monthly: { total: 0, used: 0, remaining: 0 },
-    unlimited: false
+    unlimited: true  // Di default è ILLIMITATO finché non rileva diversamente
   },
   
   update(data) {
@@ -497,7 +497,12 @@ const QuotaTracker = {
   
   async load() {
     const result = await chrome.storage.local.get('quota');
-    if (result.quota) this.quota = result.quota;
+    if (result.quota) {
+      this.quota = result.quota;
+    } else {
+      // Nessuna quota salvata → usa unlimited
+      this.quota.unlimited = true;
+    }
   },
   
   broadcast() {

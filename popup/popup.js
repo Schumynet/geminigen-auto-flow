@@ -455,31 +455,32 @@ document.addEventListener('DOMContentLoaded', () => {
   // ═══════════════════════════════════════════════════════════
   
   function updateQuotaUI(quota) {
-    if (quota.status === 'unlimited') {
+    if (quota.status === 'unlimited' || quota.status === undefined) {
       dailyUsedEl.textContent = '∞';
       dailyTotalEl.textContent = '∞';
       monthlyUsedEl.textContent = '∞';
       monthlyTotalEl.textContent = '∞';
       quotaBadge.className = 'quota-badge unlimited';
       quotaBadge.textContent = '∞ ILLIMITATO';
+      btnStart.disabled = false; // Mai disabilitato se unlimited
     } else {
-      dailyUsedEl.textContent = quota.daily.used;
-      dailyTotalEl.textContent = quota.daily.total || '?';
-      monthlyUsedEl.textContent = quota.monthly.used;
-      monthlyTotalEl.textContent = quota.monthly.total || '?';
+      dailyUsedEl.textContent = quota.daily?.used ?? 0;
+      dailyTotalEl.textContent = quota.daily?.total || '?';
+      monthlyUsedEl.textContent = quota.monthly?.used ?? 0;
+      monthlyTotalEl.textContent = quota.monthly?.total || '?';
       
-      const remaining = quota.remaining;
-      if (remaining <= 0) {
+      const remaining = quota.remaining ?? 0;
+      if (remaining <= 0 && quota.daily?.total > 0) {
         quotaBadge.className = 'quota-badge depleted';
         quotaBadge.textContent = '⛔ ESAURITE';
         btnStart.disabled = true;
-      } else if (remaining <= 5) {
+      } else if (remaining <= 5 && remaining > 0) {
         quotaBadge.className = 'quota-badge warning';
         quotaBadge.textContent = `⚠️ ${remaining}`;
         btnStart.disabled = false;
       } else {
         quotaBadge.className = 'quota-badge';
-        quotaBadge.textContent = `✅ ${remaining}`;
+        quotaBadge.textContent = remaining > 0 ? `✅ ${remaining}` : '✅';
         btnStart.disabled = false;
       }
     }
