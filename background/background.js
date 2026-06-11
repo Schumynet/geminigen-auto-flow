@@ -177,7 +177,7 @@ const ScriptParser = {
     return false;
   },
   
-  // Parse copione completo
+  // Parse copione completo - estrae VISIVA + VOCE + SUONO
   parseScript(text) {
     const scenes = [];
     
@@ -198,24 +198,16 @@ const ScriptParser = {
       const promptNum = match[1];
       const promptContent = match[2];
       
-      // Estrai la descrizione visiva
-      let description = this.extractVisualDescription(promptContent);
+      // Estrai tutti i campi
+      const fields = this.extractAllFields(promptContent);
       
-      // Pulisci la descrizione
-      description = this.cleanLine(description);
-      
-      // Pulisci ulteriormente
-      description = description
-        .replace(/Voiceover:.*$/gim, '')  // Rimuovi voiceover
-        .replace(/Suono di sottofondo:.*$/gim, '')  // Rimuovi suono
-        .replace(/\s+/g, ' ')  // Normalizza spazi
-        .trim();
-      
-      if (description.length > 10) {
+      if (fields.visualDescription.length > 10 || fields.voiceover.length > 5) {
         scenes.push({
           index: promptIndex,
           title: `Prompt ${promptNum}`,
-          prompts: [description],
+          visualDescription: fields.visualDescription,
+          voiceover: fields.voiceover,
+          audio: fields.audio,
           duration: 6,
           promptNumber: parseInt(promptNum),
           character: null,
@@ -230,8 +222,60 @@ const ScriptParser = {
       return this.parseScriptAlternative(cleanText);
     }
     
-    console.log(`[ScriptParser] Parsed ${scenes.length} prompts from script`);
+    console.log(`[ScriptParser] Parsed ${scenes.length} prompts with full fields`);
     return scenes;
+  },
+  
+  // Estrai tutti i campi da un prompt
+  extractAllFields(content) {
+    const result = {
+      visualDescription: '',
+      voiceover: '',
+      audio: ''
+    };
+    
+    // Estrai Descrizione visiva
+    const visualMatch = content.match(/Descrizione visiva:\s*(.+?)(?=\s*(?:Voiceover|Suono|$))/is);
+    if (visualMatch) {
+      result.visualDescription = visualMatch[1].trim();
+    }
+    
+    // Estrai Voiceover
+    const voiceMatch = content.match(/Voiceover:\s*(.+?)(?=\s*(?:Suono|$))/is);
+    if (voiceMatch) {
+      result.voiceover = voiceMatch[1].trim();
+    }
+    
+    // Estrai Suono di sottofondo
+    const audioMatch = content.match(/Suono di sottofondo:\s*(.+?)(?=\s*(?:$))/is);
+    if (audioMatch) {
+      result.audio = audioMatch[1].trim();
+    }
+    
+    // Se non abbiamo estratto niente, prova a pulire tutto
+    if (!result.visualDescription && !result.voiceover) {
+      // Rimuovi DNA e prendi il resto
+      let cleaned = content
+        .replace(/DNA[\s:]*[^\n]*\n/gi, '')
+        .replace(/Crea un video cinematico.*?\n/gi, '');
+      
+      // Separa per linea
+      const lines = cleaned.split('\n').filter(l => l.trim());
+      
+      for (const line of lines) {
+        const trimmed = line.trim();
+        
+        if (trimmed.toLowerCase().startsWith('voiceover:')) {
+          result.voiceover = trimmed.replace(/^voiceover:\s*/i, '').trim();
+        } else if (trimmed.toLowerCase().startsWith('suono')) {
+          result.audio = trimmed.replace(/^suono[\s\w]*:\s*/i, '').trim();
+        } else if (trimmed.length > 10 && !this.isNoise(trimmed)) {
+          result.visualDescription = trimmed;
+        }
+      }
+    }
+    
+    return result;
   },
   
   // Metodo alternativo: ogni riga non vuota = prompt
@@ -239,7 +283,7 @@ const ScriptParser = {
     const scenes = [];
     const lines = text.split('\n');
     
-    let currentPrompt = [];
+    let currentScene = null;
     let promptNum = 1;
     
     for (const line of lines) {
@@ -255,40 +299,54 @@ const ScriptParser = {
       // Nuovo prompt se c'è separatore
       if (/^[-_]{3,}$/.test(trimmed) || /^(BATCH|PROMPT|Clip|SCENA)\s*\d+/i.test(trimmed)) {
         // Salva quello precedente
-        if (currentPrompt.length > 0) {
-          const promptText = currentPrompt.join(' ');
-          scenes.push({
-            index: scenes.length,
-            title: `Prompt ${promptNum}`,
-            prompts: [promptText],
-            duration: 6,
-            promptNumber: promptNum,
-            character: null,
-            environment: null
-          });
+        if (currentScene && currentScene.visualDescription) {
+          scenes.push(currentScene);
           promptNum++;
-          currentPrompt = [];
         }
+        currentScene = {
+          index: scenes.length,
+          title: `Prompt ${promptNum}`,
+          visualDescription: '',
+          voiceover: '',
+          audio: '',
+          duration: 6,
+          promptNumber: promptNum,
+          character: null,
+          environment: null
+        };
         continue;
       }
       
-      currentPrompt.push(cleaned);
+      // Classifica la linea
+      if (!currentScene) {
+        currentScene = {
+          index: scenes.length,
+          title: `Prompt ${promptNum}`,
+          visualDescription: '',
+          voiceover: '',
+          audio: '',
+          duration: 6,
+          promptNumber: promptNum,
+          character: null,
+          environment: null
+        };
+      }
+      
+      if (trimmed.toLowerCase().startsWith('voiceover:')) {
+        currentScene.voiceover = trimmed.replace(/^voiceover:\s*/i, '').trim();
+      } else if (trimmed.toLowerCase().startsWith('suono')) {
+        currentScene.audio = trimmed.replace(/^suono[\s\w]*:\s*/i, '').trim();
+      } else {
+        currentScene.visualDescription = cleaned;
+      }
     }
     
     // Salva l'ultimo
-    if (currentPrompt.length > 0) {
-      scenes.push({
-        index: scenes.length,
-        title: `Prompt ${promptNum}`,
-        prompts: [currentPrompt.join(' ')],
-        duration: 6,
-        promptNumber: promptNum,
-        character: null,
-        environment: null
-      });
+    if (currentScene && currentScene.visualDescription) {
+      scenes.push(currentScene);
     }
     
-    console.log(`[ScriptParser] Alt method: ${scenes.length} prompts`);
+    console.log(`[ScriptParser] Alt method: ${scenes.length} prompts with full fields`);
     return scenes;
   },
   
